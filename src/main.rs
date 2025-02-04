@@ -1,5 +1,6 @@
 use axum::{response::IntoResponse, routing::get, serve, Router};
-
+pub mod databases;
+pub mod models;
 async fn home() -> impl IntoResponse {
     "Welcome to db metrics assignment"
 }
