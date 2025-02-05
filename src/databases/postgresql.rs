@@ -5,6 +5,7 @@ use sqlx::{postgres::PgPoolOptions, Pool, Postgres, Row};
 
 use crate::models::rune_pool_model::RunePool;
 
+#[derive(Clone)]
 pub struct PostgreSQL {
     pub pool: Pool<Postgres>,
 }
@@ -21,7 +22,7 @@ impl PostgreSQL {
             .unwrap();
 
         sqlx::query(
-            r#"CREATE TABLE IF NOT EXISTS rune_pool_history (
+            r#"CREATE TABLE IF NOT EXISTS rune_pool (
                 start_time TEXT NOT NULL,
                 end_time TEXT NOT NULL,
                 count TEXT NOT NULL,

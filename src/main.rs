@@ -4,12 +4,7 @@ use axum::{
     routing::get,
     serve, Json, Router,
 };
-use models::{
-    db_metrics::DBMetricResponse,
-    db_services::{self, DBServices},
-    MetricsQuery,
-};
-use serde_json::json;
+use models::{db_metrics::DBMetricResponse, db_services::DBServices, MetricsQuery};
 pub mod databases;
 pub mod models;
 
@@ -23,8 +18,17 @@ async fn get_metrics(
 ) -> impl IntoResponse {
     match params.db.clone().as_str() {
         "mongodb" => {
-            let read_metrics = db_services.mongo_fetch_rune().await;
             let write_metrics = db_services.mongo_write_rune().await;
+            let read_metrics = db_services.mongo_fetch_rune().await;
+            let metrics = DBMetricResponse {
+                db_name: params.db.to_string(),
+                performance: vec![read_metrics, write_metrics],
+            };
+            Json(metrics)
+        }
+        "postgresql" => {
+            let write_metrics = db_services.postgres_write_rune().await;
+            let read_metrics = db_services.postgres_fetch_rune().await;
             let metrics = DBMetricResponse {
                 db_name: params.db.to_string(),
                 performance: vec![read_metrics, write_metrics],
