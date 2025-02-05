@@ -46,7 +46,7 @@ async fn main() {
         .route("/metrics", get(get_metrics))
         .with_state(db_services);
 
-    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+    let listener = tokio::net::TcpListener::bind("localhost:3000")
         .await
         .unwrap();
     println!("Server running on port 3000");
