@@ -102,3 +102,38 @@ These performance measurements should be considered as indicative samples only, 
 2. Database Configuration
 3. System Factors
 4. Data Characteristics
+
+## APIs
+
+## Endpoints
+
+### 1. Home
+
+- **URL:** `/`
+- **Method:** `GET`
+- **Description:** Welcome endpoint
+- **Response:** Text message welcoming to the db metrics assignment
+
+### 2. Database Metrics
+
+- **URL:** `/metrics`
+- **Method:** `GET`
+- **Query Parameters:**
+  - `db` (string): Database to query metrics for
+    - Possible values:
+      - `mongodb`
+      - `postgresql`
+      - `rocksdb`
+      - `leveldb`
+      - `surrealdb`
+      - `all` (returns metrics for all databases)
+- **Response Format:** JSON
+- **Example Requests:**
+
+  ```bash
+  # Get metrics for a specific database
+  curl "http://localhost:3000/metrics?db=mongodb"
+
+  # Get metrics for all databases
+  curl "http://localhost:3000/metrics?db=all"
+  ```
