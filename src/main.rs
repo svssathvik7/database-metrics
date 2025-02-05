@@ -4,7 +4,7 @@ use axum::{
     routing::get,
     serve, Json, Router,
 };
-use models::{db_metrics::DBMetricResponse, db_services::DBServices, MetricsQuery};
+use models::{db_services::DBServices, MetricsQuery};
 pub mod databases;
 pub mod models;
 
