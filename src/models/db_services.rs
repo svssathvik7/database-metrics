@@ -1,6 +1,6 @@
 use std::{future, time::Instant};
 
-use crate::databases::{mongodb::MongoDB, postgresql::PostgreSQL};
+use crate::databases::{mongodb::MongoDB, postgresql::PostgreSQL, rocksdb::RocksDB};
 
 use super::{
     db_metrics::{DBMetrics, DBPerformance},
@@ -19,6 +19,7 @@ fn generate_rune_api_url(interval: &str, count: &str) -> String {
 pub struct DBServices {
     mongodb: MongoDB,
     postgresql: PostgreSQL,
+    rocksdb: RocksDB,
 }
 
 impl DBServices {
@@ -26,6 +27,7 @@ impl DBServices {
         Self {
             mongodb: MongoDB::init().await,
             postgresql: PostgreSQL::init().await,
+            rocksdb: RocksDB::init().await,
         }
     }
 
@@ -73,6 +75,18 @@ impl DBServices {
                 let read_metrics = Self::read_metric(|| self.postgresql.read_rune_pool()).await;
                 let write_metrics = Self::write_metrics(|interval: RunePool| async move {
                     self.postgresql.write_rune_pool(interval).await
+                })
+                .await;
+                let performance = DBPerformance {
+                    db_name: db_name.to_string(),
+                    performance: vec![read_metrics, write_metrics],
+                };
+                vec![performance]
+            }
+            "rocksdb" => {
+                let read_metrics = Self::read_metric(|| self.rocksdb.read_rune_pool()).await;
+                let write_metrics = Self::write_metrics(|interval: RunePool| async move {
+                    self.rocksdb.write_rune_pool(interval).await
                 })
                 .await;
                 let performance = DBPerformance {
