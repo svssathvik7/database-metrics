@@ -1,0 +1,77 @@
+[
+  {
+    "db_name": "mongodb",
+    "performance": [
+      {
+        "execution_time": 0.240,
+        "total_records": 400,
+        "operation": "Read"
+      },
+      {
+        "execution_time": 23.034,
+        "total_records": 400,
+        "operation": "Insert"
+      }
+    ]
+  },
+  {
+    "db_name": "postgresql",
+    "performance": [
+      {
+        "execution_time": 0.132,
+        "total_records": 400,
+        "operation": "Read"
+      },
+      {
+        "execution_time": 13.571,
+        "total_records": 400,
+        "operation": "Insert"
+      }
+    ]
+  },
+  {
+    "db_name": "rocksdb",
+    "performance": [
+      {
+        "execution_time": 0.045,
+        "total_records": 400,
+        "operation": "Read"
+      },
+      {
+        "execution_time": 0.0105,
+        "total_records": 400,
+        "operation": "Insert"
+      }
+    ]
+  },
+  {
+    "db_name": "leveldb",
+    "performance": [
+      {
+        "execution_time": 0.269,
+        "total_records": 400,
+        "operation": "Read"
+      },
+      {
+        "execution_time": 2.925,
+        "total_records": 400,
+        "operation": "Insert"
+      }
+    ]
+  },
+  {
+    "db_name": "surrealdb",
+    "performance": [
+      {
+        "execution_time": 0.532,
+        "total_records": 400,
+        "operation": "Read"
+      },
+      {
+        "execution_time": 70.856,
+        "total_records": 400,
+        "operation": "Insert"
+      }
+    ]
+  }
+]
