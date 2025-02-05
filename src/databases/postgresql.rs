@@ -51,4 +51,18 @@ impl PostgreSQL {
             .collect();
         rune_pool_records
     }
+
+    pub async fn write_rune_pool(&self, record: RunePool) {
+        sqlx::query(
+            r#"INSERT INTO rune_pool (start_time, end_time, units, count) VALUES ($1, $2, $3, $4)"#,
+        )
+        .bind(record.start_time)
+        .bind(record.end_time)
+        .bind(record.units)
+        .bind(record.count)
+        .execute(&self.pool)
+        .await
+        .map_err(|e| eprintln!("Error writing rune pool by postgres {:?}", e))
+        .expect("Postgres failed to write rune pool records");
+    }
 }
