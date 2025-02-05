@@ -12,7 +12,7 @@ impl RocksDB {
         let mut options = Options::default();
         options.create_if_missing(true);
 
-        let path = Path::new("./rocksdb");
+        let path = Path::new("./data/rocksdb");
         let db = Arc::new(DB::open(&options, path).expect("Failed to open RocksDB"));
 
         Self { db }

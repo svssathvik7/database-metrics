@@ -1,13 +1,15 @@
 use std::{future, time::Instant};
 
-use crate::databases::{mongodb::MongoDB, postgresql::PostgreSQL, rocksdb::RocksDB};
+use crate::databases::{
+    leveldb::LevelDB, mongodb::MongoDB, postgresql::PostgreSQL, rocksdb::RocksDB,
+};
 
 use super::{
     db_metrics::{DBMetrics, DBPerformance},
     rune_pool_model::{RunePool, RunePoolResponse},
 };
 
-const DB_NAMES: [&str; 2] = ["mongodb", "postgresql"];
+const DB_NAMES: [&str; 4] = ["mongodb", "postgresql", "rocksdb", "leveldb"];
 fn generate_rune_api_url(interval: &str, count: &str) -> String {
     format!(
         "https://midgard.ninerealms.com/v2/history/runepool?interval={}&count={}",
@@ -20,6 +22,7 @@ pub struct DBServices {
     mongodb: MongoDB,
     postgresql: PostgreSQL,
     rocksdb: RocksDB,
+    leveldb: LevelDB,
 }
 
 impl DBServices {
@@ -28,6 +31,7 @@ impl DBServices {
             mongodb: MongoDB::init().await,
             postgresql: PostgreSQL::init().await,
             rocksdb: RocksDB::init().await,
+            leveldb: LevelDB::init().await,
         }
     }
 
@@ -87,6 +91,18 @@ impl DBServices {
                 let read_metrics = Self::read_metric(|| self.rocksdb.read_rune_pool()).await;
                 let write_metrics = Self::write_metrics(|interval: RunePool| async move {
                     self.rocksdb.write_rune_pool(interval).await
+                })
+                .await;
+                let performance = DBPerformance {
+                    db_name: db_name.to_string(),
+                    performance: vec![read_metrics, write_metrics],
+                };
+                vec![performance]
+            }
+            "leveldb" => {
+                let read_metrics = Self::read_metric(|| self.leveldb.read_rune_pool()).await;
+                let write_metrics = Self::write_metrics(|interval: RunePool| async move {
+                    self.leveldb.write_rune_pool(interval).await
                 })
                 .await;
                 let performance = DBPerformance {
