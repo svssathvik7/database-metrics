@@ -1,8 +1,11 @@
-use std::time::Instant;
+use std::{future, time::Instant};
 
 use crate::databases::{mongodb::MongoDB, postgresql::PostgreSQL};
 
-use super::{db_metrics::DBMetrics, rune_pool_model::RunePoolResponse};
+use super::{
+    db_metrics::{DBMetricResponse, DBMetrics},
+    rune_pool_model::{RunePool, RunePoolResponse},
+};
 
 fn generate_rune_api_url(interval: &str, count: &str) -> String {
     format!(
@@ -25,9 +28,13 @@ impl DBServices {
         }
     }
 
-    pub async fn postgres_fetch_rune(&self) -> DBMetrics {
+    pub async fn read_metric<F, Fut>(read_fn: F) -> DBMetrics
+    where
+        F: FnOnce() -> Fut,
+        Fut: future::Future<Output = Vec<RunePool>>,
+    {
         let start = Instant::now();
-        let records = self.postgresql.read_rune_pool().await;
+        let records = read_fn().await;
         let duration = start.elapsed();
         let metrics = DBMetrics {
             execution_time: duration.as_secs_f64(),
@@ -37,19 +44,32 @@ impl DBServices {
         metrics
     }
 
-    pub async fn mongo_fetch_rune(&self) -> DBMetrics {
-        let start = Instant::now();
-        let records = self.mongodb.read_rune_pool().await;
-        let duration = start.elapsed();
-        let metrics = DBMetrics {
-            execution_time: duration.as_secs_f64(),
-            total_records: records.len() as u64,
-            operation: super::db_metrics::OperationType::Read,
-        };
-        metrics
+    pub async fn get_db_metric(&self, db_name: &str) -> DBMetricResponse {
+        match db_name {
+            "mongodb" => {
+                let read_metrics = Self::read_metric(|| self.mongodb.read_rune_pool()).await;
+                let write_metrics = Self::write_metrics(|interval: RunePool| async move {
+                    self.mongodb.write_rune_pool(interval).await
+                })
+                .await;
+
+                DBMetricResponse {
+                    db_name: db_name.to_string(),
+                    performance: vec![read_metrics, write_metrics],
+                }
+            }
+            _ => DBMetricResponse {
+                db_name: "Invalid".to_string(),
+                performance: vec![],
+            },
+        }
     }
 
-    pub async fn postgres_write_rune(&self) -> DBMetrics {
+    pub async fn write_metrics<F, Fut>(write_fn: F) -> DBMetrics
+    where
+        F: Fn(RunePool) -> Fut,
+        Fut: future::Future<Output = ()>,
+    {
         let url = generate_rune_api_url("hour", "400");
         let response: RunePoolResponse = reqwest::get(url)
             .await
@@ -60,36 +80,13 @@ impl DBServices {
         let total_records = response.intervals.len() as u64;
         let start = Instant::now();
         for interval in response.intervals {
-            self.postgresql.write_rune_pool(interval).await;
+            write_fn(interval).await;
         }
         let duration = start.elapsed();
-        let metrics = DBMetrics {
+        DBMetrics {
             execution_time: duration.as_secs_f64(),
             operation: super::db_metrics::OperationType::Insert,
             total_records,
-        };
-        metrics
-    }
-
-    pub async fn mongo_write_rune(&self) -> DBMetrics {
-        let url = generate_rune_api_url("hour", "400");
-        let response: RunePoolResponse = reqwest::get(url)
-            .await
-            .unwrap()
-            .json::<RunePoolResponse>()
-            .await
-            .unwrap();
-        let total_records = response.intervals.len() as u64;
-        let start = Instant::now();
-        for interval in response.intervals {
-            self.mongodb.write_rune_pool(interval).await;
         }
-        let duration = start.elapsed();
-        let metrics = DBMetrics {
-            execution_time: duration.as_secs_f64(),
-            operation: super::db_metrics::OperationType::Insert,
-            total_records,
-        };
-        metrics
     }
 }

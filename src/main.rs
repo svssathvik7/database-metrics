@@ -16,30 +16,7 @@ async fn get_metrics(
     State(db_services): State<DBServices>,
     Query(params): Query<MetricsQuery>,
 ) -> impl IntoResponse {
-    match params.db.clone().as_str() {
-        "mongodb" => {
-            let write_metrics = db_services.mongo_write_rune().await;
-            let read_metrics = db_services.mongo_fetch_rune().await;
-            let metrics = DBMetricResponse {
-                db_name: params.db.to_string(),
-                performance: vec![read_metrics, write_metrics],
-            };
-            Json(metrics)
-        }
-        "postgresql" => {
-            let write_metrics = db_services.postgres_write_rune().await;
-            let read_metrics = db_services.postgres_fetch_rune().await;
-            let metrics = DBMetricResponse {
-                db_name: params.db.to_string(),
-                performance: vec![read_metrics, write_metrics],
-            };
-            Json(metrics)
-        }
-        _ => Json(DBMetricResponse {
-            db_name: "Invalid".to_string(),
-            performance: vec![],
-        }),
-    }
+    Json(db_services.get_db_metric(&params.db).await)
 }
 
 #[tokio::main]
